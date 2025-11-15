@@ -20,7 +20,7 @@ services:
 
   # バックエンド（Express）
   backend:
-    image: node:20-alpine
+    image: node:20-slim
     container_name: autotweet-backend
     working_dir: /app
     volumes:
