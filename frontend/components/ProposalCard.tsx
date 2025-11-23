@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Proposal } from '@/types';
-import { updateProposal, deleteProposal } from '@/lib/api';
+import { updateProposal, deleteProposal, executeProposal } from '@/lib/api';
 import EditModal from './EditModal';
 
 interface ProposalCardProps {
@@ -21,18 +21,24 @@ export default function ProposalCard({
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const handleApprove = async () => {
+  const handleExecute = async () => {
+    if (!confirm('この提案を実行しますか？\n（リプライ投稿 + いいね）')) {
+      return;
+    }
+
     setIsProcessing(true);
 
     try {
-      const updated = await updateProposal(proposal.id, {
-        status: 'approved',
-      });
+      const updated = await executeProposal(proposal.id);
       onUpdate(updated);
-      alert('提案を承認しました');
+      alert('リプライ投稿といいねが完了しました');
     } catch (error) {
-      console.error('Approve error:', error);
-      alert('承認に失敗しました');
+      console.error('Execute error:', error);
+      alert(
+        error instanceof Error
+          ? `実行に失敗しました: ${error.message}`
+          : '実行に失敗しました'
+      );
     } finally {
       setIsProcessing(false);
     }
@@ -73,19 +79,30 @@ export default function ProposalCard({
   };
 
   const handleEdit = async (newReplyText: string) => {
+    if (!confirm('修正したリプライを実行しますか？\n（リプライ投稿 + いいね）')) {
+      return;
+    }
+
     setIsProcessing(true);
 
     try {
-      const updated = await updateProposal(proposal.id, {
+      // リプライ文面を更新
+      await updateProposal(proposal.id, {
         replyText: newReplyText,
-        status: 'approved',
       });
+
+      // 実行
+      const updated = await executeProposal(proposal.id);
       onUpdate(updated);
       setIsEditModalOpen(false);
-      alert('リプライ文面を更新しました');
+      alert('リプライ投稿といいねが完了しました');
     } catch (error) {
-      console.error('Edit error:', error);
-      alert('更新に失敗しました');
+      console.error('Edit and execute error:', error);
+      alert(
+        error instanceof Error
+          ? `実行に失敗しました: ${error.message}`
+          : '実行に失敗しました'
+      );
     } finally {
       setIsProcessing(false);
     }
@@ -178,25 +195,25 @@ export default function ProposalCard({
         {proposal.status === 'pending' && (
           <div className="flex gap-2">
             <button
-              onClick={handleApprove}
+              onClick={handleExecute}
               disabled={isProcessing}
               className="flex-1 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-300 transition-colors"
             >
-              ✓ 実行
+              {isProcessing ? '実行中...' : '実行'}
             </button>
             <button
               onClick={() => setIsEditModalOpen(true)}
               disabled={isProcessing}
               className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-300 transition-colors"
             >
-              ✏ 修正して実行
+              修正して実行
             </button>
             <button
               onClick={handleSkip}
               disabled={isProcessing}
               className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 disabled:bg-gray-100 transition-colors"
             >
-              ✗ スキップ
+              スキップ
             </button>
           </div>
         )}

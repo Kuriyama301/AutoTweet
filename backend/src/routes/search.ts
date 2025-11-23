@@ -28,4 +28,10 @@ router.patch('/proposals/:id', (req, res) => searchController.updateProposal(req
  */
 router.delete('/proposals/:id', (req, res) => searchController.deleteProposal(req, res));
 
+/**
+ * POST /api/proposals/:id/execute
+ * 提案を実行（リプライ投稿 + いいね）
+ */
+router.post('/proposals/:id/execute', (req, res) => searchController.executeProposal(req, res));
+
 export default router;

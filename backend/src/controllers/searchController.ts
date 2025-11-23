@@ -39,18 +39,18 @@ export class SearchController {
         return;
       }
 
-      console.log(`🔍 検索開始: ${query}`);
+      console.log(`検索開始: ${query}`);
 
       // 0. XScraperを初期化（Cookieを使用、ヘッドレスモード）
       await this.xScraper.init(true, true);
 
       // 1. X検索スクレイピング
       const allPosts = await this.xScraper.searchPosts({ query, limit: 20 });
-      console.log(`✅ ${allPosts.length}件のポストを取得`);
+      console.log(`${allPosts.length}件のポストを取得`);
 
       // 2. 経営者のポスト選定
       const selectedPosts = this.postSelector.selectExecutivePosts(allPosts, limit);
-      console.log(`✅ ${selectedPosts.length}件のポストを選定`);
+      console.log(`${selectedPosts.length}件のポストを選定`);
 
       // 3. ブラウザをクリーンアップ
       await this.xScraper.close();
@@ -75,7 +75,7 @@ export class SearchController {
 
       // 5. 提案を保存
       await this.proposalStore.add(proposals);
-      console.log(`✅ ${proposals.length}件の提案を保存`);
+      console.log(`${proposals.length}件の提案を保存`);
 
       // 6. レスポンス返却
       res.status(200).json({
@@ -178,6 +178,67 @@ export class SearchController {
       res.status(500).json({
         success: false,
         error: '提案の削除に失敗しました',
+      });
+    }
+  }
+
+  /**
+   * 提案を実行（リプライ投稿 + いいね）
+   */
+  async executeProposal(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+
+      // 提案を取得
+      const proposals = await this.proposalStore.getAll();
+      const proposal = proposals.find((p) => p.id === id);
+
+      if (!proposal) {
+        res.status(404).json({
+          success: false,
+          error: '提案が見つかりませんでした',
+        });
+        return;
+      }
+
+      console.log(`提案[${id}]の実行を開始`);
+
+      // XScraperを初期化
+      await this.xScraper.init(true, true);
+
+      // リプライ投稿
+      await this.xScraper.postReply(proposal.post.url, proposal.replyText);
+
+      // いいね
+      await this.xScraper.likePost(proposal.post.url);
+
+      // ブラウザをクリーンアップ
+      await this.xScraper.close();
+
+      // ステータスを更新
+      const updated = await this.proposalStore.update(id, {
+        status: 'executed',
+      });
+
+      console.log(`提案[${id}]の実行が完了`);
+
+      res.status(200).json({
+        success: true,
+        proposal: updated,
+      });
+    } catch (error) {
+      console.error('提案実行エラー:', error);
+
+      // エラー時もブラウザをクリーンアップ
+      try {
+        await this.xScraper.close();
+      } catch (cleanupError) {
+        console.error('クリーンアップエラー:', cleanupError);
+      }
+
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : '提案の実行に失敗しました',
       });
     }
   }

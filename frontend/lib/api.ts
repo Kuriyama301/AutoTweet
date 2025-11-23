@@ -71,3 +71,23 @@ export async function deleteProposal(id: string): Promise<void> {
     throw new Error('提案の削除に失敗しました');
   }
 }
+
+/**
+ * 提案を実行（リプライ投稿 + いいね）
+ */
+export async function executeProposal(id: string): Promise<Proposal> {
+  const response = await fetch(`${API_BASE_URL}/api/proposals/${id}/execute`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || '提案の実行に失敗しました');
+  }
+
+  const data = await response.json();
+  return data.proposal;
+}

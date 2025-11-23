@@ -218,6 +218,104 @@ export class XScraper {
   }
 
   /**
+   * リプライを投稿
+   * @param postUrl - 対象ポストのURL
+   * @param replyText - リプライ文面
+   */
+  async postReply(postUrl: string, replyText: string): Promise<void> {
+    if (!this.page) {
+      throw new Error('XScraper is not initialized. Call init() first.');
+    }
+
+    console.log(`リプライ投稿開始: ${postUrl}`);
+
+    try {
+      // ポストページに移動
+      await this.page.goto(postUrl, { waitUntil: 'load', timeout: 30000 });
+      await this.page.waitForTimeout(3000);
+
+      // リプライボタンをクリック
+      const replyButton = await this.page.$('button[data-testid="reply"]');
+      if (!replyButton) {
+        throw new Error('リプライボタンが見つかりません');
+      }
+
+      await replyButton.click();
+      await this.page.waitForTimeout(2000);
+
+      // テキストエリアに入力
+      const textArea = await this.page.$('div[data-testid="tweetTextarea_0"]');
+      if (!textArea) {
+        throw new Error('テキストエリアが見つかりません');
+      }
+
+      await textArea.click();
+      await this.page.waitForTimeout(500);
+
+      // テキストを入力
+      await textArea.type(replyText, { delay: 50 });
+      await this.page.waitForTimeout(1000);
+
+      // 送信ボタンをクリック
+      const postButton = await this.page.$('button[data-testid="tweetButton"]');
+      if (!postButton) {
+        throw new Error('送信ボタンが見つかりません');
+      }
+
+      await postButton.click();
+      await this.page.waitForTimeout(3000);
+
+      console.log('リプライ投稿成功');
+    } catch (error) {
+      console.error('リプライ投稿エラー:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * ポストにいいねする
+   * @param postUrl - 対象ポストのURL
+   */
+  async likePost(postUrl: string): Promise<void> {
+    if (!this.page) {
+      throw new Error('XScraper is not initialized. Call init() first.');
+    }
+
+    console.log(`いいね実行: ${postUrl}`);
+
+    try {
+      // ポストページに移動（すでに開いている場合はスキップ）
+      const currentUrl = this.page.url();
+      if (currentUrl !== postUrl) {
+        await this.page.goto(postUrl, { waitUntil: 'load', timeout: 30000 });
+        await this.page.waitForTimeout(2000);
+      }
+
+      // いいねボタンを探す
+      const likeButton = await this.page.$('button[data-testid="like"]');
+      if (!likeButton) {
+        throw new Error('いいねボタンが見つかりません');
+      }
+
+      // いいね済みかチェック
+      const isLiked = await this.page.$('button[data-testid="unlike"]');
+      if (isLiked) {
+        console.log('すでにいいね済みです');
+        return;
+      }
+
+      // いいねをクリック
+      await likeButton.click();
+      await this.page.waitForTimeout(1000);
+
+      console.log('いいね成功');
+    } catch (error) {
+      console.error('いいねエラー:', error);
+      throw error;
+    }
+  }
+
+  /**
    * ブラウザを閉じる
    */
   async close(): Promise<void> {
