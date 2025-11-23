@@ -86,6 +86,16 @@ export class XScraper {
 
       // ページの読み込み待機
       await this.page.waitForTimeout(5000);
+
+      // スクロールして追加のポストを読み込む
+      console.log('スクロールして追加のポストを読み込み中...');
+
+      for (let scrollCount = 0; scrollCount < 5; scrollCount++) {
+        await this.page.evaluate('window.scrollTo(0, document.body.scrollHeight)');
+        await this.page.waitForTimeout(2000); // スクロール後の読み込み待機
+      }
+
+      console.log('スクロール完了');
     } catch (error) {
       console.error('ページ読み込みエラー:', error);
       throw error;
