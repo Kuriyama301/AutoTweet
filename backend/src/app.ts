@@ -1,6 +1,7 @@
 import express, { Application, Request, Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import searchRoutes from './routes/search';
 
 // 環境変数の読み込み
 dotenv.config();
@@ -29,6 +30,9 @@ app.get('/', (_req: Request, res: Response) => {
     version: '1.0.0',
   });
 });
+
+// APIルート
+app.use('/api', searchRoutes);
 
 // サーバー起動
 app.listen(PORT, () => {
