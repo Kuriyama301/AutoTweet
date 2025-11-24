@@ -14,6 +14,8 @@ export default function ProposalList({
   onUpdate,
   onDelete,
 }: ProposalListProps) {
+  console.log(`ProposalList: ${proposals.length}件の提案を表示`);
+
   if (proposals.length === 0) {
     return (
       <div className="bg-white p-8 rounded-lg shadow text-center">
@@ -32,15 +34,18 @@ export default function ProposalList({
         </h2>
       </div>
 
-      {proposals.map((proposal, index) => (
-        <ProposalCard
-          key={proposal.id}
-          proposal={proposal}
-          index={index + 1}
-          onUpdate={onUpdate}
-          onDelete={onDelete}
-        />
-      ))}
+      {proposals.map((proposal, index) => {
+        console.log(`ProposalCard[${index + 1}] レンダリング:`, proposal.status, proposal.post.author);
+        return (
+          <ProposalCard
+            key={proposal.id}
+            proposal={proposal}
+            index={index + 1}
+            onUpdate={onUpdate}
+            onDelete={onDelete}
+          />
+        );
+      })}
     </div>
   );
 }

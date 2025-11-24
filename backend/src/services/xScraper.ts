@@ -80,22 +80,38 @@ export class XScraper {
     // ページに移動
     try {
       await this.page.goto(searchUrl, {
-        waitUntil: 'load',
-        timeout: 60000,
+        waitUntil: 'domcontentloaded',
+        timeout: 30000,
       });
 
-      // ページの読み込み待機
-      await this.page.waitForTimeout(5000);
+      // ページの読み込み待機（長めに設定）
+      await this.page.waitForTimeout(8000);
+
+      // ログイン状態を確認
+      const pageTitle = await this.page.title();
+      const currentUrl = this.page.url();
+      console.log(`ページタイトル: ${pageTitle}`);
+      console.log(`現在のURL: ${currentUrl}`);
+
+      // ログインページにリダイレクトされていないか確認
+      if (currentUrl.includes('/login') || currentUrl.includes('/i/flow/login')) {
+        throw new Error('ログイン状態が切れています。Cookieを再取得してください。');
+      }
 
       // スクロールして追加のポストを読み込む
       console.log('スクロールして追加のポストを読み込み中...');
 
-      for (let scrollCount = 0; scrollCount < 5; scrollCount++) {
+      for (let scrollCount = 0; scrollCount < 10; scrollCount++) {
         await this.page.evaluate('window.scrollTo(0, document.body.scrollHeight)');
         await this.page.waitForTimeout(2000); // スクロール後の読み込み待機
       }
 
       console.log('スクロール完了');
+
+      // デバッグ: スクリーンショットを保存
+      const screenshotPath = path.join(__dirname, '../../tmp/search-result.png');
+      await this.page.screenshot({ path: screenshotPath, fullPage: true });
+      console.log(`スクリーンショット保存: ${screenshotPath}`);
     } catch (error) {
       console.error('ページ読み込みエラー:', error);
       throw error;
@@ -196,7 +212,14 @@ export class XScraper {
    * ユーザープロフィールを取得
    */
   private async getUserProfile(username: string): Promise<string> {
-    if (!this.page) {
+    if (!this.page || !this.browser || !this.context) {
+      console.error(`プロフィール取得エラー (@${username}): ブラウザが初期化されていません`);
+      return '';
+    }
+
+    // ブラウザがクローズされているかチェック
+    if (!this.browser.isConnected()) {
+      console.error(`プロフィール取得エラー (@${username}): ブラウザが既にクローズされています`);
       return '';
     }
 

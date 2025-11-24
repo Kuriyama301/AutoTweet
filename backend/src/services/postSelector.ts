@@ -9,6 +9,7 @@ const EXECUTIVE_KEYWORDS = [
   'ceo',
   '創業者',
   '経営',
+  '経営者',
   '代表取締役',
   'founder',
   'Founder',
@@ -16,6 +17,18 @@ const EXECUTIVE_KEYWORDS = [
   '社長',
   'Co-Founder',
   'co-founder',
+  '取締役',
+  '役員',
+  'CTO',
+  'cto',
+  'COO',
+  'coo',
+  'CFO',
+  'cfo',
+  '起業家',
+  'オーナー',
+  '代表社員',
+  'パートナー',
 ];
 
 /**

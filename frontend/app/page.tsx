@@ -22,7 +22,14 @@ export default function Home() {
         throw new Error(response.error || '検索に失敗しました');
       }
 
+      console.log(`取得した提案数: ${response.proposals.length}件`);
+      console.log('提案データ:', response.proposals);
       setProposals(response.proposals);
+
+      // 0件の場合は通知
+      if (response.proposals.length === 0) {
+        setError('経営者のポストが見つかりませんでした。検索条件を変えてみてください。');
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : '検索に失敗しました');
       console.error('Search error:', err);
