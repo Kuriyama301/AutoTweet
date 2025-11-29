@@ -1,9 +1,9 @@
 import { Post } from '../types/post';
 
 /**
- * 経営者判定キーワード
+ * デフォルトの経営者判定キーワード
  */
-const EXECUTIVE_KEYWORDS = [
+export const DEFAULT_EXECUTIVE_KEYWORDS = [
   '代表',
   'CEO',
   'ceo',
@@ -36,31 +36,48 @@ const EXECUTIVE_KEYWORDS = [
  */
 export class PostSelector {
   /**
-   * 経営者のポストを選定
+   * キーワードでポストを選定
+   * @param posts - 全ポストリスト
+   * @param keywords - フィルタリング用キーワード（空の場合は全件取得）
+   * @param limit - 最大件数（デフォルト: 10）
+   * @returns 選定されたポストリスト
+   */
+  selectPosts(posts: Post[], keywords: string[], limit: number = 10): Post[] {
+    // キーワードが空の場合は全件取得
+    if (keywords.length === 0) {
+      return posts.slice(0, limit);
+    }
+
+    const filteredPosts = posts.filter((post) => this.matchesKeywords(post, keywords));
+
+    // limit件に制限
+    return filteredPosts.slice(0, limit);
+  }
+
+  /**
+   * 経営者のポストを選定（デフォルトキーワード使用）
    * @param posts - 全ポストリスト
    * @param limit - 最大件数（デフォルト: 10）
    * @returns 経営者のポストリスト
    */
   selectExecutivePosts(posts: Post[], limit: number = 10): Post[] {
-    const executivePosts = posts.filter((post) => this.isExecutive(post));
-
-    // limit件に制限
-    return executivePosts.slice(0, limit);
+    return this.selectPosts(posts, DEFAULT_EXECUTIVE_KEYWORDS, limit);
   }
 
   /**
-   * プロフィールから経営者かどうか判定
+   * プロフィールがキーワードにマッチするか判定
    * @param post - ポスト
-   * @returns 経営者の場合true
+   * @param keywords - キーワード配列
+   * @returns マッチする場合true
    */
-  private isExecutive(post: Post): boolean {
+  private matchesKeywords(post: Post, keywords: string[]): boolean {
     const profile = post.authorProfile;
 
     if (!profile) {
       return false;
     }
 
-    // キーワードマッチング
-    return EXECUTIVE_KEYWORDS.some((keyword) => profile.includes(keyword));
+    // いずれかのキーワードにマッチすればtrue
+    return keywords.some((keyword) => profile.includes(keyword));
   }
 }

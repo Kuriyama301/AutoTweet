@@ -28,6 +28,7 @@ export interface Proposal {
 export interface SearchRequest {
   query: string;
   limit?: number;
+  selectionKeywords?: string[];
 }
 
 /**

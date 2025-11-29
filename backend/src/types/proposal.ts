@@ -32,6 +32,9 @@ export interface SearchRequest {
 
   /** 取得件数（オプション） */
   limit?: number;
+
+  /** 選定キーワード（オプション、空の場合は全件取得） */
+  selectionKeywords?: string[];
 }
 
 /**

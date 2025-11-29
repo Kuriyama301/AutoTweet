@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { XScraper } from '../services/xScraper';
-import { PostSelector } from '../services/postSelector';
+import { PostSelector, DEFAULT_EXECUTIVE_KEYWORDS } from '../services/postSelector';
 import { ReplyGenerator } from '../services/replyGenerator';
 import { ProposalStore } from '../services/proposalStore';
 import { SearchRequest, SearchResponse } from '../types/proposal';
@@ -28,7 +28,7 @@ export class SearchController {
    */
   async search(req: Request, res: Response): Promise<void> {
     try {
-      const { query, limit = 10 } = req.body as SearchRequest;
+      const { query, limit = 10, selectionKeywords } = req.body as SearchRequest;
 
       // バリデーション
       if (!query || typeof query !== 'string' || query.trim() === '') {
@@ -39,7 +39,11 @@ export class SearchController {
         return;
       }
 
+      // キーワードの決定（未指定の場合はデフォルトキーワードを使用）
+      const keywords = selectionKeywords ?? DEFAULT_EXECUTIVE_KEYWORDS;
+
       console.log(`検索開始: ${query}`);
+      console.log(`選定キーワード: ${keywords.length}件`);
 
       // 0. XScraperを初期化（Cookieを使用、ヘッドレスモード）
       await this.xScraper.init(true, true);
@@ -48,8 +52,8 @@ export class SearchController {
       const allPosts = await this.xScraper.searchPosts({ query, limit: 20 });
       console.log(`${allPosts.length}件のポストを取得`);
 
-      // 2. 経営者のポスト選定
-      const selectedPosts = this.postSelector.selectExecutivePosts(allPosts, limit);
+      // 2. キーワードでポスト選定
+      const selectedPosts = this.postSelector.selectPosts(allPosts, keywords, limit);
       console.log(`${selectedPosts.length}件のポストを選定`);
 
       // 3. ブラウザをクリーンアップ
