@@ -44,12 +44,15 @@ export class SearchController {
 
       console.log(`検索開始: ${query}`);
       console.log(`選定キーワード: ${keywords.length}件`);
+      console.log(`目標件数: ${limit}件`);
 
       // 0. XScraperを初期化（Cookieを使用、ヘッドレスモード）
       await this.xScraper.init(true, true);
 
-      // 1. X検索スクレイピング
-      const allPosts = await this.xScraper.searchPosts({ query, limit: 20 });
+      // 1. X検索スクレイピング（目標件数の5倍を取得してフィルタ後にlimit件確保を目指す）
+      const fetchLimit = Math.min(limit * 5, 100); // 最大100件まで
+      const maxScrolls = Math.ceil(fetchLimit / 5); // 1スクロールあたり約5件と想定
+      const allPosts = await this.xScraper.searchPosts({ query, limit: fetchLimit, maxScrolls });
       console.log(`${allPosts.length}件のポストを取得`);
 
       // 2. キーワードでポスト選定

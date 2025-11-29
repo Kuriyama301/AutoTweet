@@ -33,4 +33,7 @@ export interface SearchOptions {
 
   /** 検索タイプ（最新: live, 人気: top） */
   searchType?: 'live' | 'top';
+
+  /** 最大スクロール回数（デフォルト: 10） */
+  maxScrolls?: number;
 }

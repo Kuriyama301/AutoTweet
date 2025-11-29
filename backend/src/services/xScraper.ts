@@ -70,7 +70,7 @@ export class XScraper {
       throw new Error('XScraper is not initialized. Call init() first.');
     }
 
-    const { query, limit = 20, searchType = 'live' } = options;
+    const { query, limit = 20, searchType = 'live', maxScrolls = 10 } = options;
 
     // X検索URL構築
     const searchUrl = `https://x.com/search?q=${encodeURIComponent(query)}&f=${searchType}`;
@@ -99,9 +99,9 @@ export class XScraper {
       }
 
       // スクロールして追加のポストを読み込む
-      console.log('スクロールして追加のポストを読み込み中...');
+      console.log(`スクロールして追加のポストを読み込み中（最大${maxScrolls}回）...`);
 
-      for (let scrollCount = 0; scrollCount < 10; scrollCount++) {
+      for (let scrollCount = 0; scrollCount < maxScrolls; scrollCount++) {
         await this.page.evaluate('window.scrollTo(0, document.body.scrollHeight)');
         await this.page.waitForTimeout(2000); // スクロール後の読み込み待機
       }
