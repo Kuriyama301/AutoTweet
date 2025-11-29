@@ -99,9 +99,36 @@ export class XScraper {
       }
 
       // スクロールして追加のポストを読み込む
-      console.log(`スクロールして追加のポストを読み込み中（最大${maxScrolls}回）...`);
+      console.log(`スクロールして追加のポストを読み込み中（最大${maxScrolls}回、目標${limit}件）...`);
+
+      let previousCount = 0;
+      let noChangeCount = 0;
 
       for (let scrollCount = 0; scrollCount < maxScrolls; scrollCount++) {
+        // 現在のポスト数を確認
+        const currentArticles = await this.page.$$('article[data-testid="tweet"]');
+        const currentCount = currentArticles.length;
+
+        console.log(`スクロール ${scrollCount + 1}/${maxScrolls}: 現在 ${currentCount}件`);
+
+        // 目標件数に達したら終了
+        if (currentCount >= limit) {
+          console.log(`目標件数(${limit}件)に達しました`);
+          break;
+        }
+
+        // 3回連続で件数が増えなければ終了（これ以上読み込めない）
+        if (currentCount === previousCount) {
+          noChangeCount++;
+          if (noChangeCount >= 3) {
+            console.log('これ以上ポストを読み込めません');
+            break;
+          }
+        } else {
+          noChangeCount = 0;
+        }
+        previousCount = currentCount;
+
         await this.page.evaluate('window.scrollTo(0, document.body.scrollHeight)');
         await this.page.waitForTimeout(2000); // スクロール後の読み込み待機
       }
@@ -140,7 +167,7 @@ export class XScraper {
         const userNameEl = await article.$('div[data-testid="User-Name"]');
         const userNameText = userNameEl ? await userNameEl.textContent() : '';
 
-        // @handle部分を抽出
+        // @handle部分を抽出（最初の@を使用）
         const handleMatch = userNameText?.match(/@(\w+)/);
         const authorHandle = handleMatch ? handleMatch[1] : '';
 
@@ -155,19 +182,26 @@ export class XScraper {
         const timeEl = await article.$('time');
         const timestamp = timeEl ? (await timeEl.getAttribute('datetime')) || '' : '';
 
-        // ポストURL
-        const linkEl = await article.$('a[href*="/status/"]');
+        // ポストURL - ユーザーハンドルを使ってより正確なリンクを取得
+        const linkEl = await article.$(`a[href*="/${authorHandle}/status/"]`);
         const href = linkEl ? await linkEl.getAttribute('href') : '';
         const url = href ? `https://x.com${href}` : '';
 
-        if (authorHandle) {
-          tempPosts.push({
-            text,
-            author,
-            authorHandle,
-            url,
-            timestamp,
-          });
+        // デバッグログ
+        console.log(`  ポスト[${i}]: @${authorHandle} - ${text.slice(0, 30)}...`);
+
+        if (authorHandle && url) {
+          // 重複チェック（同じURLのポストは追加しない）
+          const isDuplicate = tempPosts.some(p => p.url === url);
+          if (!isDuplicate) {
+            tempPosts.push({
+              text,
+              author,
+              authorHandle,
+              url,
+              timestamp,
+            });
+          }
         }
       } catch (error) {
         console.error(`ポスト[${i}]の基本情報抽出エラー:`, error);
